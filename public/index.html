@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备设施管理系统</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e5799 0%, #207cca 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .data-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .data-btn {
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .data-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .buildings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .building-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .building-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .building-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: #1e5799;
+        }
+        
+        .building-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .building-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .active {
+            display: block;
+        }
+        
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            color: #1e5799;
+        }
+        
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .add-btn:hover {
+            background: #218838;
+        }
+        
+        .floor-list, .equipment-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .floor-card, .equipment-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid #1e5799;
+        }
+        
+        .floor-card:hover, .equipment-card:hover {
+            background: #f0f8ff;
+            transform: translateY(-2px);
+        }
+        
+        .floor-name, .equipment-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #1e5799;
+        }
+        
+        .floor-desc, .equipment-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .equipment-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .equipment-detail {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .detail-title {
+            font-size: 22px;
+            color: #1e5799;
+        }
+        
+        .detail-status {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .detail-section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+            border-left: 4px solid #1e5799;
+            padding-left: 10px;
+        }
+        
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .param-name {
+            font-weight: bold;
+        }
+        
+        .maintenance-record {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .record-date {
+            font-weight: bold;
+        }
+        
+        .record-person {
+            color: #666;
+        }
+        
+        .record-content {
+            font-size: 14px;
+        }
+        
+        .add-record-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .add-record-btn:hover {
+            background: #218838;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            color: #1e5799;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #1e5799;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #16457a;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e5799;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .buildings-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .floor-list, .equipment-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .param-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .data-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>处理中...</div>
+    </div>
+
+    <div class="container">
+        <!-- 首页 - 楼宇选择 -->
+        <div id="home-page" class="page active">
+            <header>
+                <h1>设备设施管理系统</h1>
+                <p class="subtitle">选择楼宇查看设备设施信息</p>
+                <div class="data-controls">
+                    <button class="data-btn" onclick="exportToExcel()">📊 导出Excel</button>
+                    <label class="data-btn">
+                        📥 导入Excel
+                        <input type="file" accept=".xlsx,.xls" onchange="importFromExcel(this)" style="display: none;">
+                    </label>
+                    <button class="data-btn" onclick="exportToJSON()">💾 导出JSON</button>
+                    <label class="data-btn">
+                        📁 导入JSON
+                        <input type="file" accept=".json" onchange="importFromJSON(this)" style="display: none;">
+                    </label>
+                </div>
+            </header>
+            
+            <div class="buildings-grid">
+                <!-- 八个楼宇卡片 -->
+                <div class="building-card" data-building="1">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">1号楼</div>
+                    <div class="building-desc">主办公楼 - 5层 + 屋顶</div>
+                </div>
+                
+                <div class="building-card" data-building="2">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">2号楼</div>
+                    <div class="building-desc">消防与工程楼</div>
+                </div>
+                
+                <div class="building-card" data-building="3">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">3号楼</div>
+                    <div class="building-desc">餐厅 - 2层</div>
+                </div>
+                
+                <div class="building-card" data-building="4">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">4号楼</div>
+                    <div class="building-desc">中控与配电室</div>
+                </div>
+                
+                <div class="building-card" data-building="5">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">5号楼</div>
+                    <div class="building-desc">库房与解析室</div>
+                </div>
+                
+                <div class="building-card" data-building="6">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">6号楼</div>
+                    <div class="building-desc">库房与危废间</div>
+                </div>
+                
+                <div class="building-card" data-building="7">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">7号楼</div>
+                    <div class="building-desc">二次蒸汽室</div>
+                </div>
+                
+                <div class="building-card" data-building="8">
+                    <div class="building-icon">🏢</div>
+                    <div class="building-name">8号楼</div>
+                    <div class="building-desc">西门卫</div>
+                </div>
+                
+                <div class="building-card" data-building="outdoor">
+                    <div class="building-icon">🌳</div>
+                    <div class="building-name">室外区域</div>
+                    <div class="building-desc">冷却塔、路灯、充电桩等</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 楼层/区域选择页面 -->
+        <div id="floor-page" class="page">
+            <button class="back-btn" onclick="goBack('floor-page', 'home-page')">
+                ← 返回楼宇列表
+            </button>
+            <div class="page-header">
+                <h2 class="page-title" id="building-title">楼宇名称</h2>
+                <button class="add-btn" onclick="openAddFloorModal()">
+                    + 添加楼层/区域
+                </button>
+            </div>
+            <div class="floor-list" id="floor-list">
+                <!-- 楼层/区域卡片将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 设备列表页面 -->
+        <div id="equipment-page" class="page">
+            <button class="back-btn" onclick="goBack('equipment-page', 'floor-page')">
+                ← 返回楼层列表
+            </button>
+            <div class="page-header">
+                <h2 class="page-title" id="floor-title">楼层/区域名称</h2>
+                <button class="add-btn" onclick="openAddEquipmentModal()">
+                    + 添加设备
+                </button>
+            </div>
+            <div class="equipment-list" id="equipment-list">
+                <!-- 设备卡片将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 设备详情页面 -->
+        <div id="detail-page" class="page">
+            <button class="back-btn" onclick="goBack('detail-page', 'equipment-page')">
+                ← 返回设备列表
+            </button>
+            <div class="equipment-detail" id="equipment-detail">
+                <!-- 设备详情内容将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加楼层/区域模态框 -->
+    <div id="add-floor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">添加楼层/区域</h3>
+                <button class="close-btn" onclick="closeAddFloorModal()">&times;</button>
+            </div>
+            <form id="add-floor-form">
+                <div class="form-group">
+                    <label class="form-label">名称</label>
+                    <input type="text" class="form-input" id="floor-name" required placeholder="例如：地下制冷机房">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea class="form-textarea" id="floor-description" placeholder="简要描述该区域的功能或特点"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddFloorModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 添加设备模态框 -->
+    <div id="add-equipment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">添加新设备</h3>
+                <button class="close-btn" onclick="closeAddEquipmentModal()">&times;</button>
+            </div>
+            <form id="add-equipment-form">
+                <div class="form-group">
+                    <label class="form-label">设备名称</label>
+                    <input type="text" class="form-input" id="equipment-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">设备型号</label>
+                    <input type="text" class="form-input" id="equipment-model">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">设备描述</label>
+                    <textarea class="form-textarea" id="equipment-description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">功率</label>
+                    <input type="text" class="form-input" id="equipment-power">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">制造商</label>
+                    <input type="text" class="form-input" id="equipment-manufacturer">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">维护周期</label>
+                    <select class="form-input" id="equipment-maintenance-schedule">
+                        <option value="每月一次">每月一次</option>
+                        <option value="每季度一次">每季度一次</option>
+                        <option value="每半年一次">每半年一次</option>
+                        <option value="每年一次">每年一次</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddEquipmentModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存设备</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 添加维护记录模态框 -->
+    <div id="record-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">添加维护记录</h3>
+                <button class="close-btn" onclick="closeRecordModal()">&times;</button>
+            </div>
+            <form id="record-form">
+                <div class="form-group">
+                    <label class="form-label">维护日期</label>
+                    <input type="date" class="form-input" id="record-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">维护人员</label>
+                    <input type="text" class="form-input" id="record-person" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">维护内容</label>
+                    <textarea class="form-textarea" id="record-content" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">下次维护时间</label>
+                    <input type="date" class="form-input" id="next-maintenance">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据 - 在实际应用中应从后端API获取
+        let buildingData = {
+            "1": {
+                name: "1号楼",
+                floors: [
+                    { id: "1-1", name: "地下制冷机房", description: "中央空调制冷设备" },
+                    { id: "1-2", name: "一层", description: "办公区与接待区" },
+                    { id: "1-3", name: "一夹层", description: "设备间与储藏室" },
+                    { id: "1-4", name: "二层", description: "办公区与会议室" },
+                    { id: "1-5", name: "二夹层", description: "档案室与设备间" },
+                    { id: "1-6", name: "屋顶", description: "通风设备与太阳能板" }
+                ]
+            },
+            "2": {
+                name: "2号楼",
+                floors: [
+                    { id: "2-1", name: "地下消防泵房", description: "消防水泵与控制系统" },
+                    { id: "2-2", name: "门卫室", description: "安保设备与监控" },
+                    { id: "2-3", name: "消防屋", description: "消防器材存放" },
+                    { id: "2-4", name: "工程屋", description: "工程设备与工具" },
+                    { id: "2-5", name: "杂物间", description: "杂物存放" }
+                ]
+            },
+            "3": {
+                name: "3号楼",
+                floors: [
+                    { id: "3-1", name: "一层厨房", description: "厨房设备与设施" },
+                    { id: "3-2", name: "二层餐厅", description: "就餐区设备" }
+                ]
+            },
+            "4": {
+                name: "4号楼",
+                floors: [
+                    { id: "4-1", name: "中控室", description: "中央控制系统" },
+                    { id: "4-2", name: "监控室", description: "监控设备" },
+                    { id: "4-3", name: "配电室", description: "电力分配设备" }
+                ]
+            },
+            "5": {
+                name: "5号楼",
+                floors: [
+                    { id: "5-1", name: "库房七", description: "物资存储" },
+                    { id: "5-2", name: "库房八", description: "物资存储" },
+                    { id: "5-3", name: "解析室", description: "分析检测设备" }
+                ]
+            },
+            "6": {
+                name: "6号楼",
+                floors: [
+                    { id: "6-1", name: "库房六", description: "物资存储" },
+                    { id: "6-2", name: "危废间", description: "危险废物存放" },
+                    { id: "6-3", name: "金属小间", description: "金属材料存放" }
+                ]
+            },
+            "7": {
+                name: "7号楼",
+                floors: [
+                    { id: "7-1", name: "二次蒸汽室", description: "蒸汽设备" }
+                ]
+            },
+            "8": {
+                name: "8号楼",
+                floors: [
+                    { id: "8-1", name: "西门卫", description: "安保设施" }
+                ]
+            },
+            "outdoor": {
+                name: "室外区域",
+                floors: [
+                    { id: "out-1", name: "冷却塔", description: "3个工业冷却塔" },
+                    { id: "out-2", name: "路灯", description: "园区照明系统" },
+                    { id: "out-3", name: "新能源充电桩", description: "8个车辆充电桩" },
+                    { id: "out-4", name: "叉车充电区", description: "叉车停放与充电" },
+                    { id: "out-5", name: "车棚", description: "摩托车与电动自行车" }
+                ]
+            }
+        };
+        
+        // 设备数据示例
+        let equipmentData = {
+            "1-1": [
+                {
+                    id: "eq-1-1-1",
+                    name: "中央制冷机组",
+                    description: "主制冷设备",
+                    model: "YCWE-100",
+                    parameters: [
+                        { name: "型号", value: "YCWE-100" },
+                        { name: "功率", value: "380kW" },
+                        { name: "制冷剂", value: "R134a" },
+                        { name: "额定电流", value: "650A" },
+                        { name: "制造商", value: "特灵" },
+                        { name: "安装日期", value: "2020-05-15" }
+                    ],
+                    spareParts: ["压缩机", "冷凝器", "蒸发器", "控制模块"],
+                    maintenanceSchedule: "每季度一次",
+                    requiredMaterials: ["制冷剂", "润滑油", "过滤器"],
+                    maintenancePersonnel: ["张三", "李四"],
+                    maintenanceRecords: [
+                        {
+                            date: "2023-06-10",
+                            person: "张三",
+                            content: "常规检查，更换过滤器，设备运行正常。"
+                        },
+                        {
+                            date: "2023-03-15",
+                            person: "李四",
+                            content: "季度维护，检查制冷剂压力，补充润滑油。"
+                        }
+                    ]
+                }
+            ]
+        };
+        
+        // 从服务器加载数据
+        async function loadData() {
+            showLoading();
+            console.log('正在从服务器加载数据...');
+            try {
+                const response = await fetch('/api/data');
+                if (response.ok) {
+                    const serverData = await response.json();
+                    // 清空现有数据
+                    for (let key in buildingData) {
+                        delete buildingData[key];
+                    }
+                    for (let key in equipmentData) {
+                        delete equipmentData[key];
+                    }
+                    // 加载服务器数据
+                    Object.assign(buildingData, serverData.buildingData);
+                    Object.assign(equipmentData, serverData.equipmentData);
+                    console.log('✅ 从服务器加载数据成功');
+                } else {
+                    throw new Error('服务器响应错误: ' + response.status);
+                }
+            } catch (error) {
+                console.log('❌ 服务器连接失败:', error.message);
+                console.log('💾 尝试从本地存储加载数据...');
+                
+                // 回退到本地存储
+                const savedBuildingData = localStorage.getItem('buildingData');
+                const savedEquipmentData = localStorage.getItem('equipmentData');
+                
+                if (savedBuildingData) {
+                    try {
+                        Object.assign(buildingData, JSON.parse(savedBuildingData));
+                    } catch (e) {
+                        console.error('本地建筑数据解析失败');
+                    }
+                }
+                if (savedEquipmentData) {
+                    try {
+                        Object.assign(equipmentData, JSON.parse(savedEquipmentData));
+                    } catch (e) {
+                        console.error('本地设备数据解析失败');
+                    }
+                }
+            }
+            hideLoading();
+        }
+
+        // 保存数据到服务器
+        async function saveData() {
+            const data = {
+                buildingData: buildingData,
+                equipmentData: equipmentData,
+                lastUpdate: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('✅ 数据保存到服务器成功');
+                } else {
+                    throw new Error(result.message || '服务器保存失败');
+                }
+            } catch (error) {
+                console.log('❌ 服务器保存失败:', error.message);
+                console.log('💾 保存到本地存储...');
+                
+                // 回退到本地存储
+                try {
+                    localStorage.setItem('buildingData', JSON.stringify(buildingData));
+                    localStorage.setItem('equipmentData', JSON.stringify(equipmentData));
+                    console.log('✅ 本地存储保存成功');
+                } catch (localError) {
+                    console.error('❌ 本地存储也失败了:', localError);
+                    alert('数据保存失败！请检查存储空间。');
+                }
+            }
+        }
+
+        // Excel导出功能
+        function exportToExcel() {
+            showLoading();
+            
+            try {
+                // 准备数据
+                const equipmentList = [];
+                
+                // 遍历所有设备
+                for (const floorId in equipmentData) {
+                    const floorEquipment = equipmentData[floorId];
+                    for (const equipment of floorEquipment) {
+                        // 找到楼层信息
+                        let buildingName = '';
+                        let floorName = '';
+                        
+                        for (const buildingId in buildingData) {
+                            const building = buildingData[buildingId];
+                            const floor = building.floors.find(f => f.id === floorId);
+                            if (floor) {
+                                buildingName = building.name;
+                                floorName = floor.name;
+                                break;
+                            }
+                        }
+                        
+                        equipmentList.push({
+                            '楼宇': buildingName,
+                            '楼层/区域': floorName,
+                            '设备名称': equipment.name,
+                            '设备描述': equipment.description,
+                            '设备型号': equipment.model,
+                            '维护周期': equipment.maintenanceSchedule,
+                            '维护人员': equipment.maintenancePersonnel ? equipment.maintenancePersonnel.join(', ') : '',
+                            '所需材料': equipment.requiredMaterials ? equipment.requiredMaterials.join(', ') : '',
+                            '备件清单': equipment.spareParts ? equipment.spareParts.join(', ') : '',
+                            '维护记录数量': equipment.maintenanceRecords ? equipment.maintenanceRecords.length : 0
+                        });
+                    }
+                }
+                
+                // 创建Excel工作表
+                const ws = XLSX.utils.json_to_sheet(equipmentList);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '设备清单');
+                
+                // 导出文件
+                const fileName = `设备数据导出_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                console.log('✅ Excel导出成功');
+            } catch (error) {
+                console.error('❌ Excel导出失败:', error);
+                alert('导出失败：' + error.message);
+            }
+            
+            hideLoading();
+        }
+
+        // Excel导入功能
+        function importFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            showLoading();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 读取第一个工作表
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (confirm(`检测到 ${jsonData.length} 条设备记录，确认导入吗？`)) {
+                        // 这里可以添加Excel数据到系统的逻辑
+                        console.log('Excel数据:', jsonData);
+                        alert('Excel导入功能开发中...');
+                    }
+                } catch (error) {
+                    console.error('Excel导入失败:', error);
+                    alert('导入失败：' + error.message);
+                }
+                
+                hideLoading();
+                input.value = '';
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // JSON导出功能
+        function exportToJSON() {
+            showLoading();
+            
+            try {
+                const data = {
+                    buildingData: buildingData,
+                    equipmentData: equipmentData,
+                    exportTime: new Date().toISOString(),
+                    version: "1.0"
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `设备数据备份_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log('✅ JSON导出成功');
+            } catch (error) {
+                console.error('❌ JSON导出失败:', error);
+                alert('导出失败：' + error.message);
+            }
+            
+            hideLoading();
+        }
+
+        // JSON导入功能
+        function importFromJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            showLoading();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('确认导入数据？这将覆盖当前所有数据。')) {
+                        // 清空现有数据
+                        for (let key in buildingData) {
+                            delete buildingData[key];
+                        }
+                        for (let key in equipmentData) {
+                            delete equipmentData[key];
+                        }
+                        
+                        // 导入新数据
+                        Object.assign(buildingData, data.buildingData);
+                        Object.assign(equipmentData, data.equipmentData);
+                        
+                        // 保存数据
+                        saveData();
+                        alert('数据导入成功！页面将重新加载。');
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('JSON导入失败:', error);
+                    alert('导入失败：文件格式错误！');
+                }
+                
+                hideLoading();
+                input.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // 加载状态显示
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        // 当前选中的楼宇和楼层ID
+        let currentBuildingId = null;
+        let currentFloorId = null;
+        
+        // 页面导航函数
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        function goBack(fromPage, toPage) {
+            showPage(toPage);
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // 楼宇点击事件
+            document.querySelectorAll('.building-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const buildingId = this.getAttribute('data-building');
+                    showBuildingFloors(buildingId);
+                });
+            });
+        });
+
+        // 显示楼宇楼层/区域
+        function showBuildingFloors(buildingId) {
+            const building = buildingData[buildingId];
+            if (!building) return;
+            
+            currentBuildingId = buildingId;
+            document.getElementById('building-title').textContent = building.name;
+            const floorList = document.getElementById('floor-list');
+            floorList.innerHTML = '';
+            
+            if (building.floors && building.floors.length > 0) {
+                building.floors.forEach(floor => {
+                    const floorCard = document.createElement('div');
+                    floorCard.className = 'floor-card';
+                    floorCard.setAttribute('data-floor', floor.id);
+                    floorCard.innerHTML = `
+                        <div class="floor-name">${floor.name}</div>
+                        <div class="floor-desc">${floor.description}</div>
+                    `;
+                    floorCard.addEventListener('click', function() {
+                        showFloorEquipment(floor.id, floor.name);
+                    });
+                    floorList.appendChild(floorCard);
+                });
+            } else {
+                floorList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏗️</div>
+                        <h3>暂无楼层/区域</h3>
+                        <p>该楼宇尚未添加任何楼层或区域，点击"添加楼层/区域"按钮开始添加。</p>
+                    </div>
+                `;
+            }
+            
+            showPage('floor-page');
+        }
+        
+        // 显示楼层设备
+        function showFloorEquipment(floorId, floorName) {
+            currentFloorId = floorId;
+            document.getElementById('floor-title').textContent = floorName;
+            const equipmentList = document.getElementById('equipment-list');
+            equipmentList.innerHTML = '';
+            
+            const equipment = equipmentData[floorId] || [];
+            
+            if (equipment.length === 0) {
+                equipmentList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔧</div>
+                        <h3>暂无设备</h3>
+                        <p>该区域尚未添加任何设备，点击"添加设备"按钮添加第一个设备。</p>
+                    </div>
+                `;
+            } else {
+                equipment.forEach(item => {
+                    const equipmentCard = document.createElement('div');
+                    equipmentCard.className = 'equipment-card';
+                    equipmentCard.setAttribute('data-equipment', item.id);
+                    equipmentCard.innerHTML = `
+                        <div class="equipment-name">${item.name}</div>
+                        <div class="equipment-desc">${item.description}</div>
+                        <div class="equipment-meta">
+                            <span>型号: ${item.model || '未知'}</span>
+                            <span>维护: ${item.maintenanceSchedule || '未设置'}</span>
+                        </div>
+                    `;
+                    equipmentCard.addEventListener('click', function() {
+                        showEquipmentDetail(item);
+                    });
+                    equipmentList.appendChild(equipmentCard);
+                });
+            }
+            
+            showPage('equipment-page');
+        }
+        
+        // 显示设备详情
+        function showEquipmentDetail(equipment) {
+            const detailContainer = document.getElementById('equipment-detail');
+            
+            let parametersHtml = '';
+            if (equipment.parameters && equipment.parameters.length > 0) {
+                equipment.parameters.forEach(param => {
+                    parametersHtml += `
+                        <div class="param-item">
+                            <span class="param-name">${param.name}:</span>
+                            <span>${param.value}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                parametersHtml = '<p>暂无参数信息</p>';
+            }
+            
+            let recordsHtml = '';
+            if (equipment.maintenanceRecords && equipment.maintenanceRecords.length > 0) {
+                equipment.maintenanceRecords.forEach(record => {
+                    recordsHtml += `
+                        <div class="maintenance-record">
+                            <div class="record-header">
+                                <span class="record-date">${record.date}</span>
+                                <span class="record-person">维护人: ${record.person}</span>
+                            </div>
+                            <div class="record-content">${record.content}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                recordsHtml = '<p>暂无维护记录</p>';
+            }
+            
+            detailContainer.innerHTML = `
+                <div class="detail-header">
+                    <h2 class="detail-title">${equipment.name}</h2>
+                    <span class="detail-status">正常运行</span>
+                </div>
+                
+                <div class="detail-section">
+                    <h3 class="section-title">设备信息</h3>
+                    <p>${equipment.description || '暂无描述'}</p>
+                </div>
+                
+                <div class="detail-section">
+                    <h3 class="section-title">设备参数</h3>
+                    <div class="param-grid">
+                        ${parametersHtml}
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3 class="section-title">维护信息</h3>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <span class="param-name">维护周期:</span>
+                            <span>${equipment.maintenanceSchedule || '未设置'}</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">所需材料:</span>
+                            <span>${equipment.requiredMaterials ? equipment.requiredMaterials.join(', ') : '未设置'}</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">维护人员:</span>
+                            <span>${equipment.maintenancePersonnel ? equipment.maintenancePersonnel.join(', ') : '未设置'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3 class="section-title">备件清单</h3>
+                    <p>${equipment.spareParts ? equipment.spareParts.join(', ') : '暂无备件信息'}</p>
+                </div>
+                
+                <div class="detail-section">
+                    <h3 class="section-title">维护记录</h3>
+                    ${recordsHtml}
+                    <button class="add-record-btn" onclick="openRecordModal('${equipment.id}')">
+                        + 添加维护记录
+                    </button>
+                </div>
+            `;
+            
+            showPage('detail-page');
+        }
+        
+        // 添加楼层功能
+        function openAddFloorModal() {
+            document.getElementById('add-floor-modal').style.display = 'flex';
+        }
+        
+        function closeAddFloorModal() {
+            document.getElementById('add-floor-modal').style.display = 'none';
+            document.getElementById('add-floor-form').reset();
+        }
+        
+        // 提交添加楼层表单
+        document.getElementById('add-floor-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const floorName = document.getElementById('floor-name').value;
+            const floorDescription = document.getElementById('floor-description').value;
+            
+            // 生成唯一ID
+            const floorId = currentBuildingId + '-' + (buildingData[currentBuildingId].floors.length + 1);
+            
+            // 创建新楼层对象
+            const newFloor = {
+                id: floorId,
+                name: floorName,
+                description: floorDescription
+            };
+            
+            // 添加到楼宇数据
+            if (!buildingData[currentBuildingId].floors) {
+                buildingData[currentBuildingId].floors = [];
+            }
+            buildingData[currentBuildingId].floors.push(newFloor);
+            
+            // 保存数据
+            saveData();
+            
+            alert('楼层/区域添加成功！');
+            closeAddFloorModal();
+            
+            // 刷新楼层列表
+            const buildingName = document.getElementById('building-title').textContent;
+            showBuildingFloors(currentBuildingId);
+        });
+        
+        // 添加设备功能
+        function openAddEquipmentModal() {
+            document.getElementById('add-equipment-modal').style.display = 'flex';
+        }
+        
+        function closeAddEquipmentModal() {
+            document.getElementById('add-equipment-modal').style.display = 'none';
+            document.getElementById('add-equipment-form').reset();
+        }
+        
+        // 提交添加设备表单
+        document.getElementById('add-equipment-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const equipmentName = document.getElementById('equipment-name').value;
+            const equipmentModel = document.getElementById('equipment-model').value;
+            const equipmentDescription = document.getElementById('equipment-description').value;
+            const equipmentPower = document.getElementById('equipment-power').value;
+            const equipmentManufacturer = document.getElementById('equipment-manufacturer').value;
+            const equipmentMaintenanceSchedule = document.getElementById('equipment-maintenance-schedule').value;
+            
+            // 生成唯一ID
+            const equipmentId = 'eq-' + Date.now();
+            
+            // 创建新设备对象
+            const newEquipment = {
+                id: equipmentId,
+                name: equipmentName,
+                description: equipmentDescription,
+                model: equipmentModel,
+                parameters: [
+                    { name: "型号", value: equipmentModel },
+                    { name: "功率", value: equipmentPower },
+                    { name: "制造商", value: equipmentManufacturer }
+                ],
+                spareParts: [],
+                maintenanceSchedule: equipmentMaintenanceSchedule,
+                requiredMaterials: [],
+                maintenancePersonnel: [],
+                maintenanceRecords: []
+            };
+            
+            // 添加到设备数据
+            if (!equipmentData[currentFloorId]) {
+                equipmentData[currentFloorId] = [];
+            }
+            equipmentData[currentFloorId].push(newEquipment);
+            
+            // 保存数据
+            saveData();
+            
+            alert('设备添加成功！');
+            closeAddEquipmentModal();
+            
+            // 刷新设备列表
+            const floorName = document.getElementById('floor-title').textContent;
+            showFloorEquipment(currentFloorId, floorName);
+        });
+        
+        // 维护记录模态框
+        function openRecordModal(equipmentId) {
+            document.getElementById('record-modal').style.display = 'flex';
+            document.getElementById('record-form').setAttribute('data-equipment', equipmentId);
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('record-date').value = today;
+        }
+        
+        function closeRecordModal() {
+            document.getElementById('record-modal').style.display = 'none';
+            document.getElementById('record-form').reset();
+        }
+        
+        // 提交维护记录表单
+        document.getElementById('record-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const equipmentId = this.getAttribute('data-equipment');
+            const recordDate = document.getElementById('record-date').value;
+            const recordPerson = document.getElementById('record-person').value;
+            const recordContent = document.getElementById('record-content').value;
+            const nextMaintenance = document.getElementById('next-maintenance').value;
+            
+            // 在实际应用中，这里应该将数据发送到后端保存
+            console.log('保存维护记录:', {
+                equipmentId,
+                recordDate,
+                recordPerson,
+                recordContent,
+                nextMaintenance
+            });
+            
+            alert('维护记录已保存！');
+            closeRecordModal();
+        });
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', function(e) {
+            const addFloorModal = document.getElementById('add-floor-modal');
+            const addEquipmentModal = document.getElementById('add-equipment-modal');
+            const recordModal = document.getElementById('record-modal');
+            
+            if (e.target === addFloorModal) {
+                closeAddFloorModal();
+            }
+            if (e.target === addEquipmentModal) {
+                closeAddEquipmentModal();
+            }
+            if (e.target === recordModal) {
+                closeRecordModal();
+            }
+        });
+    </script>
+</body>
+</html>
